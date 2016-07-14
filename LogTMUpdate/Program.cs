@@ -10,6 +10,9 @@ namespace LogTMUpdate
     {
         static void Main(string[] args)
         {
+
+            // otwieranie TM update log xlsx i dopisywanie wierszy do odpowiednich zakladek,
+            // na podstawie sciezki z ktore odpalono skrypt pod PPM
         }
     }
 }
