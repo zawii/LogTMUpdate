@@ -70,18 +70,24 @@ namespace LogTMUpdate
                         int lastNotEmptyRow = GetLastUsedRow(worksheet);
 
                         int emptyRow = lastNotEmptyRow + 1;
+                        //int emptyLangRow = emptyRow;
+                        foreach (string langDir in Directory.GetDirectories(projectPath, "*-*"))
+                        {
+                            
+                            string langFolder = langDir.Substring(langDir.LastIndexOf('\\') + 1);
+                         
+                            worksheet.Cells[emptyRow, 1].Value = matchedProjectNumber;
+                            worksheet.Cells[emptyRow, 2].Value = matchedHONumber;
+                            worksheet.Cells[emptyRow, 3].Value = langFolder;
+                            worksheet.Cells[emptyRow, 4].Value = DateTime.Now.ToShortDateString();
+                            worksheet.Cells[emptyRow, 5].Value = Client;
+                            worksheet.Cells[emptyRow, 6].Value = TM;
+                            worksheet.Cells[emptyRow, 7].Value = TMStatus;
+                            worksheet.Cells[emptyRow, 8].Value = Environment.UserName;
+                            emptyRow++;
+                        }
 
-                        worksheet.Cells[emptyRow, 1].Value = matchedProjectNumber;
-                        worksheet.Cells[emptyRow, 2].Value = matchedHONumber;
-
-                        worksheet.Cells[emptyRow, 4].Value = DateTime.Now.ToShortDateString();
-                        worksheet.Cells[emptyRow, 5].Value = Client;
-                        worksheet.Cells[emptyRow, 6].Value = TM;
-                        worksheet.Cells[emptyRow, 7].Value = TMStatus;
-                        worksheet.Cells[emptyRow, 8].Value = Environment.UserName;
-
-
-
+                        
                         //Console.WriteLine(lastRow);
                         //Console.WriteLine(worksheet);
                     }
