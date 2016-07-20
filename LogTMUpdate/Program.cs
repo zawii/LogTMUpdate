@@ -8,6 +8,9 @@ using System.Drawing;
 using OfficeOpenXml.Style;
 using System.Text.RegularExpressions;
 using System.Linq;
+using Microsoft.Win32;
+using System.Windows.Forms;
+using System.Threading;
 
 namespace LogTMUpdate
 {
@@ -16,92 +19,28 @@ namespace LogTMUpdate
         static void Main(string[] args)
         {
 
-            // otwieranie TM update log xlsx i dopisywanie wierszy do odpowiednich zakladek,
-            // na podstawie sciezki z ktore odpalono skrypt pod PPM
-            FileInfo TMlogFile = new FileInfo(@"C:\Users\zawii\Desktop\ttest\TmUpdate.xlsx");
 
-
-            string projectPath = @"D:\_work\CPH\Desktop\1624444_Got_Volvo_SDAS_DASDAS_DAS\HO9\post\_rdy";
-
-
-            string projectNumberPattern = @"(?<=\\)\d{7}(?=_)";
-            string HOPattern = @"(?<=\\HO)\d+?(?=\\)";
-
-
-            Regex findProjectNumber = new Regex(projectNumberPattern, RegexOptions.IgnoreCase);
-            Match matchedProjectNumber = findProjectNumber.Match(projectPath);
-
-            Regex findHONumber = new Regex(HOPattern, RegexOptions.IgnoreCase);
-            Match matchedHONumber = findHONumber.Match(projectPath);
-
-
-            Console.WriteLine("Project number: " + matchedProjectNumber);
-            Console.WriteLine("HO: " + matchedHONumber);
-
-            Console.WriteLine("Languages: ");
-            int liczbaJezykow = 0;
-            foreach (string langDir in Directory.GetDirectories(projectPath, "*-*"))
+            if (args.Length == 0)
             {
-                string langFolder = langDir.Substring(langDir.LastIndexOf('\\') + 1);
-                Console.WriteLine(langFolder);
-                liczbaJezykow++;
-            }
-            Console.WriteLine("Number of languages: " +liczbaJezykow);
-
-            Console.WriteLine("Which client? (Volvo, Thule, ...)");
-            string Client = Console.ReadLine();
-            Console.WriteLine("Which TM? (Trucks, Buses, ... [none])");
-            string TM = Console.ReadLine();
-            Console.WriteLine("TM status? (Proofread, ClientApproved)");
-            string TMStatus = Console.ReadLine();
-            Console.WriteLine("Additional info? (Comments)");
-            string AddInfo = Console.ReadLine();
-
-
-            using (ExcelPackage package = new ExcelPackage(TMlogFile))
-            {
-                //ExcelWorksheet worksheet = package.Workbook.Worksheets[0];
-
-                foreach (var worksheet in package.Workbook.Worksheets)
+                //if (Registry.ClassesRoot.GetValue("HKEY_CLASSES_ROOT\\batfile\\shell\\PopulateFoldersWithXLZ\\command", null) == null)
+                if (Registry.GetValue("HKEY_CLASSES_ROOT\\Directory\\shell\\UpdateTMLog\\command", "", null) == null)
                 {
-
-                    if (worksheet.Name == Client)
-                    {
-                        int lastNotEmptyRow = GetLastUsedRow(worksheet);
-
-                        int emptyRow = lastNotEmptyRow + 1;
-                        //int emptyLangRow = emptyRow;
-                        foreach (string langDir in Directory.GetDirectories(projectPath, "*-*"))
-                        {
-                            
-                            string langFolder = langDir.Substring(langDir.LastIndexOf('\\') + 1);
-                         
-                            worksheet.Cells[emptyRow, 1].Value = matchedProjectNumber;
-                            worksheet.Cells[emptyRow, 2].Value = matchedHONumber;
-                            worksheet.Cells[emptyRow, 3].Value = langFolder;
-                            worksheet.Cells[emptyRow, 4].Value = DateTime.Now.ToShortDateString();
-                            worksheet.Cells[emptyRow, 5].Value = Client;
-                            worksheet.Cells[emptyRow, 6].Value = TM;
-                            worksheet.Cells[emptyRow, 7].Value = TMStatus;
-                            worksheet.Cells[emptyRow, 8].Value = Environment.UserName;
-                            emptyRow++;
-                        }
-
-                        
-                        //Console.WriteLine(lastRow);
-                        //Console.WriteLine(worksheet);
-                    }
-
+                    Registry.SetValue("HKEY_CLASSES_ROOT\\Directory\\shell\\UpdateTMLog\\command", "", System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName + " \"%1\"");
+                    MessageBox.Show("Script added to directory context menu!", "Script Added!");
+                }
+                else
+                {
+                    MessageBox.Show("Script already installed!", "Script detected!");
                 }
 
-
-                package.Save();
             }
+            else
+            {
+                string dir = Path.GetFullPath(args[0]);
+                UpdateTMLog(dir);
 
-            
-            Console.ReadKey();
-
-            
+            }
+            Thread.Sleep(2000);
 
         }
 
@@ -118,6 +57,102 @@ namespace LogTMUpdate
                 row--;
             }
             return row;
+        }
+
+        static void UpdateTMLog(string arg)
+        {
+
+            // otwieranie TM update log xlsx i dopisywanie wierszy do odpowiednich zakladek,
+            // na podstawie sciezki z ktore odpalono skrypt pod PPM
+            FileInfo TMlogFile = new FileInfo(@"\\waw-fs01\K_ENG\_Gothenburg\Volvo\_TM_update_log\TM_UPDATE_LOG.xlsx");
+
+
+            string projectPath = arg;
+
+
+            string projectNumberPattern = @"(?<=\\)\d{7}(?=_)";
+            string HOPattern = @"(?<=\\HO)\d+?(?=\\)";
+
+
+            Regex findProjectNumber = new Regex(projectNumberPattern, RegexOptions.IgnoreCase);
+            Match matchedProjectNumber = findProjectNumber.Match(projectPath);
+            int projNr = Int32.Parse(matchedProjectNumber.ToString());
+
+            Regex findHONumber = new Regex(HOPattern, RegexOptions.IgnoreCase);
+            Match matchedHONumber = findHONumber.Match(projectPath);
+            int hoNr = Int32.Parse(matchedHONumber.ToString());
+
+            Console.WriteLine("Project number: " + matchedProjectNumber);
+            Console.WriteLine("HO: " + matchedHONumber);
+
+            Console.WriteLine("Languages: ");
+            int liczbaJezykow = 0;
+            foreach (string langDir in Directory.GetDirectories(projectPath, "*-*"))
+            {
+                string langFolder = langDir.Substring(langDir.LastIndexOf('\\') + 1);
+                Console.WriteLine(langFolder);
+                liczbaJezykow++;
+            }
+            Console.WriteLine("Number of languages: " + liczbaJezykow);
+
+            Console.WriteLine("Which client? (Volvo, Thule, ...)");
+            string Client = Console.ReadLine();
+            Console.WriteLine("Which TM? (Trucks, Buses, ... [none])");
+            string TM = Console.ReadLine();
+            Console.WriteLine("TM status? (Proofread, ClientApproved)");
+            string TMStatus = Console.ReadLine();
+            //Console.WriteLine("Additional info? (Comments)");
+            //string AddInfo = Console.ReadLine();
+
+            int dodanychWpisow = 0;
+            using (ExcelPackage package = new ExcelPackage(TMlogFile))
+            {
+                //ExcelWorksheet worksheet = package.Workbook.Worksheets[0];
+
+                foreach (var worksheet in package.Workbook.Worksheets)
+                {
+
+                    if (worksheet.Name.ToLower() == Client.ToLower())
+                    {
+                        int lastNotEmptyRow = GetLastUsedRow(worksheet);
+
+                        int emptyRow = lastNotEmptyRow + 1;
+                        //int emptyLangRow = emptyRow;
+                        foreach (string langDir in Directory.GetDirectories(projectPath, "*-*"))
+                        {
+
+                            string langFolder = langDir.Substring(langDir.LastIndexOf('\\') + 1);
+
+                            worksheet.Cells["A:B"].Style.Numberformat.Format = "";
+                      
+
+                            worksheet.Cells[emptyRow, 1].Value = projNr;
+                            worksheet.Cells[emptyRow, 2].Value = hoNr;
+                            worksheet.Cells[emptyRow, 3].Value = langFolder;
+                            worksheet.Cells[emptyRow, 4].Value = DateTime.Now.ToShortDateString();
+                            worksheet.Cells[emptyRow, 5].Value = Client;
+                            worksheet.Cells[emptyRow, 6].Value = TM;
+                            worksheet.Cells[emptyRow, 7].Value = TMStatus;
+                            worksheet.Cells[emptyRow, 8].Value = Environment.UserName;
+                            emptyRow++;
+                            dodanychWpisow++;
+                        }
+
+
+                        //Console.WriteLine(lastRow);
+                        //Console.WriteLine(worksheet);
+                    }
+
+                }
+
+
+                package.Save();
+            }
+
+            Console.WriteLine("Dodane wpisy: " + dodanychWpisow);
+         
+
+
         }
     }
 }
