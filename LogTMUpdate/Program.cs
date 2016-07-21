@@ -26,11 +26,11 @@ namespace LogTMUpdate
                 if (Registry.GetValue("HKEY_CLASSES_ROOT\\Directory\\shell\\UpdateTMLog\\command", "", null) == null)
                 {
                     Registry.SetValue("HKEY_CLASSES_ROOT\\Directory\\shell\\UpdateTMLog\\command", "", System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName + " \"%1\"");
-                    MessageBox.Show("Script added to directory context menu!", "Script Added!");
+                    MessageBox.Show("Script added to directory context menu - UpdateTMLog!", "Script Added!");
                 }
                 else
                 {
-                    MessageBox.Show("Script already installed!", "Script detected!");
+                    MessageBox.Show("UpdateTMLog script already installed!", "Script detected!");
                 }
 
             }
@@ -62,8 +62,6 @@ namespace LogTMUpdate
         static void UpdateTMLog(string arg)
         {
 
-            // otwieranie TM update log xlsx i dopisywanie wierszy do odpowiednich zakladek,
-            // na podstawie sciezki z ktore odpalono skrypt pod PPM
             FileInfo TMlogFile = new FileInfo(@"\\waw-fs01\K_ENG\_Gothenburg\Volvo\_TM_update_log\TM_UPDATE_LOG.xlsx");
 
 
@@ -71,29 +69,31 @@ namespace LogTMUpdate
 
 
             string projectNumberPattern = @"(?<=\\)\d{7}(?=_)";
-            string HOPattern = @"(?<=\\HO)\d+?(?=\\)";
+            string HOPattern = @"(?<=\\HO)\d+?(\\)?";
 
 
             Regex findProjectNumber = new Regex(projectNumberPattern, RegexOptions.IgnoreCase);
             Match matchedProjectNumber = findProjectNumber.Match(projectPath);
-            int projNr = Int32.Parse(matchedProjectNumber.ToString());
+            int projNr;
+            Int32.TryParse(matchedProjectNumber.ToString(), out projNr);
 
             Regex findHONumber = new Regex(HOPattern, RegexOptions.IgnoreCase);
             Match matchedHONumber = findHONumber.Match(projectPath);
-            int hoNr = Int32.Parse(matchedHONumber.ToString());
+            int hoNr;
+            Int32.TryParse(matchedHONumber.ToString(), out hoNr);
 
             Console.WriteLine("Project number: " + matchedProjectNumber);
             Console.WriteLine("HO: " + matchedHONumber);
 
             Console.WriteLine("Languages: ");
-            int liczbaJezykow = 0;
+            int nrOfLangs = 0;
             foreach (string langDir in Directory.GetDirectories(projectPath, "*-*"))
             {
                 string langFolder = langDir.Substring(langDir.LastIndexOf('\\') + 1);
                 Console.WriteLine(langFolder);
-                liczbaJezykow++;
+                nrOfLangs++;
             }
-            Console.WriteLine("Number of languages: " + liczbaJezykow);
+            Console.WriteLine("Number of languages: " + nrOfLangs);
 
             Console.WriteLine("Which client? (Volvo, Thule, ...)");
             string Client = Console.ReadLine();
@@ -104,7 +104,7 @@ namespace LogTMUpdate
             //Console.WriteLine("Additional info? (Comments)");
             //string AddInfo = Console.ReadLine();
 
-            int dodanychWpisow = 0;
+            int addedEntries = 0;
             using (ExcelPackage package = new ExcelPackage(TMlogFile))
             {
                 //ExcelWorksheet worksheet = package.Workbook.Worksheets[0];
@@ -129,13 +129,13 @@ namespace LogTMUpdate
                             worksheet.Cells[emptyRow, 1].Value = projNr;
                             worksheet.Cells[emptyRow, 2].Value = hoNr;
                             worksheet.Cells[emptyRow, 3].Value = langFolder;
-                            worksheet.Cells[emptyRow, 4].Value = DateTime.Now.ToShortDateString();
+                            worksheet.Cells[emptyRow, 4].Value = DateTime.Now;
                             worksheet.Cells[emptyRow, 5].Value = Client;
                             worksheet.Cells[emptyRow, 6].Value = TM;
                             worksheet.Cells[emptyRow, 7].Value = TMStatus;
                             worksheet.Cells[emptyRow, 8].Value = Environment.UserName;
                             emptyRow++;
-                            dodanychWpisow++;
+                            addedEntries++;
                         }
 
 
@@ -149,8 +149,13 @@ namespace LogTMUpdate
                 package.Save();
             }
 
-            Console.WriteLine("Dodane wpisy: " + dodanychWpisow);
-         
+            Console.WriteLine("Dodane wpisy: " + addedEntries);
+
+            if (addedEntries == 0 || projNr == 0 || hoNr == 0)
+            {
+                Console.WriteLine("Chyba cos poszlo nie tak!");
+                Console.ReadKey();
+            }
 
 
         }
