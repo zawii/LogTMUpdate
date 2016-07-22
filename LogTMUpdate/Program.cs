@@ -69,7 +69,7 @@ namespace LogTMUpdate
 
 
             string projectNumberPattern = @"(?<=\\)\d{7}(?=_)";
-            string HOPattern = @"(?<=\\HO)\d+?(\\)?";
+            string HOPattern = @"(?<=\\HO)\d+?(?=\\)";
 
 
             Regex findProjectNumber = new Regex(projectNumberPattern, RegexOptions.IgnoreCase);
@@ -129,7 +129,7 @@ namespace LogTMUpdate
                             worksheet.Cells[emptyRow, 1].Value = projNr;
                             worksheet.Cells[emptyRow, 2].Value = hoNr;
                             worksheet.Cells[emptyRow, 3].Value = langFolder;
-                            worksheet.Cells[emptyRow, 4].Value = DateTime.Now;
+                            worksheet.Cells[emptyRow, 4].Value = DateTime.Now.ToShortDateString();
                             worksheet.Cells[emptyRow, 5].Value = Client;
                             worksheet.Cells[emptyRow, 6].Value = TM;
                             worksheet.Cells[emptyRow, 7].Value = TMStatus;
